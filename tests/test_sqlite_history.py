@@ -11,8 +11,8 @@ def test_create_history_table():
     assert db["_test_history"].schema == (
         "CREATE TABLE _test_history (\n"
         "    _rowid INTEGER,\n"
-        "   id integer,\n"
-        "   name text,\n"
+        "    id integer,\n"
+        "    name text,\n"
         "    _version INTEGER,\n"
         "    _updated INTEGER,\n"
         "    _mask INTEGER\n"

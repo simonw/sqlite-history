@@ -6,7 +6,7 @@ def history_table_sql(table, columns_and_types):
     if isinstance(columns_and_types, dict):
         columns_and_types = dict.items()
     column_names = ",\n".join(
-        "   {name} {type}".format(name=escape_sqlite(name), type=type)
+        "    {name} {type}".format(name=escape_sqlite(name), type=type)
         for name, type in columns_and_types
     )
     return """

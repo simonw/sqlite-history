@@ -77,10 +77,10 @@ cog.out(
 ```sql
 CREATE TABLE _people_history (
     _rowid INTEGER,
-   id INTEGER,
-   name TEXT,
-   age INTEGER,
-   weight REAL,
+    id INTEGER,
+    name TEXT,
+    age INTEGER,
+    weight REAL,
     _version INTEGER,
     _updated INTEGER,
     _mask INTEGER
