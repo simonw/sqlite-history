@@ -119,7 +119,7 @@ CREATE TRIGGER people_insert_history
 AFTER INSERT ON people
 BEGIN
     INSERT INTO _people_history (_rowid, id, name, age, weight, _version, _updated, _mask)
-    VALUES (new.rowid, new.id, new.name, new.age, new.weight, 1, cast((julianday('now') - 2440587.5) * 86400.0 * 1000 as integer), 15);
+    VALUES (new.rowid, new.id, new.name, new.age, new.weight, 1, cast((julianday('now') - 2440587.5) * 86400 * 1000 as integer), 15);
 END;
 
 CREATE TRIGGER people_update_history
@@ -133,7 +133,7 @@ BEGIN
         CASE WHEN old.age != new.age then new.age else null end, 
         CASE WHEN old.weight != new.weight then new.weight else null end,
         (SELECT MAX(_version) FROM _people_history WHERE _rowid = old.rowid) + 1,
-        cast((julianday('now') - 2440587.5) * 86400.0 * 1000 as integer),
+        cast((julianday('now') - 2440587.5) * 86400 * 1000 as integer),
         (CASE WHEN old.id != new.id then 1 else 0 end) + (CASE WHEN old.name != new.name then 2 else 0 end) + (CASE WHEN old.age != new.age then 4 else 0 end) + (CASE WHEN old.weight != new.weight then 8 else 0 end)
     WHERE old.id != new.id or old.name != new.name or old.age != new.age or old.weight != new.weight;
 END;
@@ -146,7 +146,7 @@ BEGIN
         old.rowid,
         old.id, old.name, old.age, old.weight,
         (SELECT COALESCE(MAX(_version), 0) from _people_history WHERE _rowid = old.rowid) + 1,
-        cast((julianday('now') - 2440587.5) * 86400.0 * 1000 as integer),
+        cast((julianday('now') - 2440587.5) * 86400 * 1000 as integer),
         -1
     );
 END;

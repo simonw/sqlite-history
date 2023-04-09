@@ -35,7 +35,7 @@ CREATE TRIGGER {table}_insert_history
 AFTER INSERT ON {table}
 BEGIN
     INSERT INTO _{table}_history (_rowid, {column_names}, _version, _updated, _mask)
-    VALUES (new.rowid, {new_column_values}, 1, cast((julianday('now') - 2440587.5) * 86400.0 * 1000 as integer), {mask});
+    VALUES (new.rowid, {new_column_values}, 1, cast((julianday('now') - 2440587.5) * 86400 * 1000 as integer), {mask});
 END;
 """.format(
         table=table,
@@ -71,7 +71,7 @@ BEGIN
     INSERT INTO _{table}_history (_rowid, {column_names}, _version, _updated, _mask)
     SELECT old.rowid, {update_columns_sql},
         (SELECT MAX(_version) FROM _{table}_history WHERE _rowid = old.rowid) + 1,
-        cast((julianday('now') - 2440587.5) * 86400.0 * 1000 as integer),
+        cast((julianday('now') - 2440587.5) * 86400 * 1000 as integer),
         {mask_sql}
     WHERE {where_sql};
 END;
@@ -91,7 +91,7 @@ BEGIN
         old.rowid,
         {old_column_values},
         (SELECT COALESCE(MAX(_version), 0) from _{table}_history WHERE _rowid = old.rowid) + 1,
-        cast((julianday('now') - 2440587.5) * 86400.0 * 1000 as integer),
+        cast((julianday('now') - 2440587.5) * 86400 * 1000 as integer),
         -1
     );
 END;
@@ -105,7 +105,7 @@ def backfill_sql(table, columns):
     column_names = ", ".join(escape_sqlite(column) for column in columns)
     sql = """
 INSERT INTO _{table}_history (_rowid, {column_names}, _version, _updated, _mask)
-SELECT rowid, {column_names}, 1, cast((julianday('now') - 2440587.5) * 86400.0 * 1000 as integer), {mask}
+SELECT rowid, {column_names}, 1, cast((julianday('now') - 2440587.5) * 86400 * 1000 as integer), {mask}
 FROM {table};
 """.format(
         table=table, column_names=column_names, mask=2 ** len(columns) - 1
