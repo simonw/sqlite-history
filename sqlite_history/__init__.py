@@ -8,7 +8,7 @@ def configure_history(db, table):
     columns_and_types = []
     columns = []
     for row in cursor.fetchall():
-        columns_and_types.append(f"{row[1]} {row[2]}")
+        columns_and_types.append((row[1], row[2]))
         columns.append(row[1])
     # Create the history table
     with db:

@@ -6,30 +6,30 @@ from unittest.mock import ANY
 def test_create_history_table():
     db = sqlite_utils.Database(memory=True)
     db["test"].create({"id": int, "name": str}, pk="id")
-    db.executescript(history_table_sql("test", ["id integer", "name text"]))
+    db.executescript(history_table_sql("test", (("id", "integer"), ("name", "text"))))
     assert db["_test_history"].schema == (
         "CREATE TABLE _test_history (\n"
-        "    _rowid INTEGER,\n"
+        "    _rowid integer,\n"
         "   id integer,\n"
         "   name text,\n"
-        "    _version INTEGER,\n"
-        "    _updated INTEGER,\n"
-        "    _mask INTEGER\n"
+        "    _version integer,\n"
+        "    _updated integer,\n"
+        "    _mask integer\n"
         ")"
     )
 
 
 def test_triggers():
     db = sqlite_utils.Database(memory=True)
-    db["test"].create({"id": int, "name": str}, pk="id")
-    db.executescript(history_table_sql("test", ["id integer", "name text"]))
+    db["test"].create({"id": int, "name": str, "order": int}, pk="id")
+    db.executescript(history_table_sql("test", (("id", "integer"), ("name", "text"))))
     db.executescript(triggers_sql("test", ["id", "name"]))
     db["test"].insert({"id": 1, "name": "Alice"})
     db["test"].insert({"id": 2, "name": "Bob"})
     db["test"].update(1, {"name": "Alice Smith"})
     assert list(db["test"].rows) == [
-        {"id": 1, "name": "Alice Smith"},
-        {"id": 2, "name": "Bob"},
+        {"id": 1, "name": "Alice Smith", "order": None},
+        {"id": 2, "name": "Bob", "order": None},
     ]
     assert list(db["_test_history"].rows) == [
         {
@@ -62,7 +62,7 @@ def test_triggers():
 def test_triggers_delete():
     db = sqlite_utils.Database(memory=True)
     db["test"].create({"id": int, "name": str}, pk="id")
-    db.executescript(history_table_sql("test", ["id integer", "name text"]))
+    db.executescript(history_table_sql("test", (("id", "integer"), ("name", "text"))))
     db.executescript(triggers_sql("test", ["id", "name"]))
     db["test"].insert({"id": 1, "name": "Alice"})
     db["test"].insert({"id": 2, "name": "Bob"})
