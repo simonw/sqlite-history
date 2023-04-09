@@ -11,14 +11,14 @@ def history_table_sql(table, columns_and_types):
         for name, type in columns_and_types
     )
     return """
-create table _{table}_history (
-    _rowid integer,
+CREATE TABLE _{table}_history (
+    _rowid INTEGER,
 {column_names},
-    _version integer,
-    _updated integer,
-    _mask integer
+    _version INTEGER,
+    _updated INTEGER,
+    _mask INTEGER
 );
-create index idx_{table}_history_rowid on _{table}_history (_rowid);
+CREATE INDEX idx_{table}_history_rowid ON _{table}_history (_rowid);
 """.format(
         table=table, column_names=column_names
     )
@@ -32,12 +32,12 @@ def triggers_sql(table, columns):
     # mask is a bit mask of all columns, so len(columns)
     mask = 2 ** len(columns) - 1
     insert_trigger = """
-create trigger {table}_insert_history
-after insert on {table}
-begin
-    insert into _{table}_history (_rowid, {column_names}, _version, _updated, _mask)
-    values (new.rowid, {new_column_values}, 1, strftime('%s', 'now'), {mask});
-end;
+CREATE TRIGGER {table}_insert_history
+AFTER INSERT ON {table}
+BEGIN
+    INSERT INTO _{table}_history (_rowid, {column_names}, _version, _updated, _mask)
+    VALUES (new.rowid, {new_column_values}, 1, strftime('%s', 'now'), {mask});
+END;
 """.format(
         table=table,
         column_names=column_names,
@@ -48,13 +48,13 @@ end;
     for column in columns:
         update_columns.append(
             """
-        case when old.{column} != new.{column} then new.{column} else null end""".format(
+        CASE WHEN old.{column} != new.{column} then new.{column} else null end""".format(
                 column=column
             )
         )
     update_columns_sql = ", ".join(update_columns)
     mask_sql = " + ".join(
-        """(case when old.{column} != new.{column} then {base} else 0 end)""".format(
+        """(CASE WHEN old.{column} != new.{column} then {base} else 0 end)""".format(
             column=column,
             base=2**idx,
         )
@@ -64,17 +64,17 @@ end;
         "old.{column} != new.{column}".format(column=column) for column in columns
     )
     update_trigger = """
-create trigger {table}_update_history
-after update on {table}
-for each row
-begin
-    insert into _{table}_history (_rowid, {column_names}, _version, _updated, _mask)
-    select old.rowid, {update_columns_sql},
-        (select max(_version) from _{table}_history where _rowid = old.rowid) + 1,
+CREATE TRIGGER {table}_update_history
+AFTER UPDATE ON {table}
+FOR EACH ROW
+BEGIN
+    INSERT INTO _{table}_history (_rowid, {column_names}, _version, _updated, _mask)
+    SELECT old.rowid, {update_columns_sql},
+        (SELECT MAX(_version) FROM _{table}_history WHERE _rowid = old.rowid) + 1,
         strftime('%s', 'now'),
         {mask_sql}
-    where {where_sql};
-end;
+    WHERE {where_sql};
+END;
 """.format(
         table=table,
         column_names=column_names,
@@ -83,14 +83,14 @@ end;
         where_sql=where_sql,
     )
     delete_trigger = """
-create trigger {table}_delete_history
-after delete on {table}
-begin
-    insert into _{table}_history (_rowid, {column_names}, _version, _updated, _mask)
-    values (
+CREATE TRIGGER {table}_delete_history
+AFTER DELETE ON {table}
+BEGIN
+    INSERT INTO _{table}_history (_rowid, {column_names}, _version, _updated, _mask)
+    VALUES (
         old.rowid,
         {old_column_values},
-        (select coalesce(max(_version), 0) from _{table}_history where _rowid = old.rowid) + 1,
+        (SELECT COALESCE(MAX(_version), 0) from _{table}_history WHERE _rowid = old.rowid) + 1,
         strftime('%s', 'now'),
         -1
     );
@@ -107,13 +107,21 @@ def backfill_sql(table, columns):
     # FROM content;
     column_names = ", ".join(columns)
     sql = """
-insert into _{table}_history (_rowid, {column_names}, _version, _updated, _mask)
-select rowid, {column_names}, 1, strftime('%s', 'now'), {mask}
-from {table};
+INSERT INTO _{table}_history (_rowid, {column_names}, _version, _updated, _mask)
+SELECT rowid, {column_names}, 1, strftime('%s', 'now'), {mask}
+FROM {table};
 """.format(
         table=table, column_names=column_names, mask=2 ** len(columns) - 1
     )
     return sql
+
+
+def table_columns_and_types(db, table):
+    cursor = db.execute(f"PRAGMA table_info([{table}]);")
+    columns_and_types = []
+    for row in cursor.fetchall():
+        columns_and_types.append((row[1], row[2]))
+    return columns_and_types
 
 
 # From https://www.sqlite.org/lang_keywords.html

@@ -9,12 +9,12 @@ def test_create_history_table():
     db.executescript(history_table_sql("test", (("id", "integer"), ("name", "text"))))
     assert db["_test_history"].schema == (
         "CREATE TABLE _test_history (\n"
-        "    _rowid integer,\n"
+        "    _rowid INTEGER,\n"
         "   id integer,\n"
         "   name text,\n"
-        "    _version integer,\n"
-        "    _updated integer,\n"
-        "    _mask integer\n"
+        "    _version INTEGER,\n"
+        "    _updated INTEGER,\n"
+        "    _mask INTEGER\n"
         ")"
     )
 

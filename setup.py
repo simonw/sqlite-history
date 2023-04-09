@@ -28,6 +28,6 @@ setup(
     version=VERSION,
     packages=["sqlite_history"],
     install_requires=[],
-    extras_require={"test": ["pytest", "sqlite-utils"]},
+    extras_require={"test": ["pytest", "sqlite-utils", "cogapp"]},
     python_requires=">=3.7",
 )

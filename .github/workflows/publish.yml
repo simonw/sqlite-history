@@ -27,6 +27,7 @@ jobs:
     - name: Run tests
       run: |
         pytest
+        cog --check README.md
   deploy:
     runs-on: ubuntu-latest
     needs: [test]
