@@ -35,7 +35,7 @@ CREATE TRIGGER {table}_insert_history
 AFTER INSERT ON {table}
 BEGIN
     INSERT INTO _{table}_history (_rowid, {column_names}, _version, _updated, _mask)
-    VALUES (new.rowid, {new_column_values}, 1, strftime('%s', 'now'), {mask});
+    VALUES (new.rowid, {new_column_values}, 1, cast((julianday('now') - 2440587.5) * 86400.0 * 1000 as integer), {mask});
 END;
 """.format(
         table=table,
@@ -71,7 +71,7 @@ BEGIN
     INSERT INTO _{table}_history (_rowid, {column_names}, _version, _updated, _mask)
     SELECT old.rowid, {update_columns_sql},
         (SELECT MAX(_version) FROM _{table}_history WHERE _rowid = old.rowid) + 1,
-        strftime('%s', 'now'),
+        cast((julianday('now') - 2440587.5) * 86400.0 * 1000 as integer),
         {mask_sql}
     WHERE {where_sql};
 END;
@@ -91,7 +91,7 @@ BEGIN
         old.rowid,
         {old_column_values},
         (SELECT COALESCE(MAX(_version), 0) from _{table}_history WHERE _rowid = old.rowid) + 1,
-        strftime('%s', 'now'),
+        cast((julianday('now') - 2440587.5) * 86400.0 * 1000 as integer),
         -1
     );
 END;
@@ -102,13 +102,10 @@ END;
 
 
 def backfill_sql(table, columns):
-    # INSERT INTO _content_history (id, title, body, created, _version, _updated, _mask)
-    # SELECT id, title, body, created, 1, strftime('%s', 'now'), 15
-    # FROM content;
     column_names = ", ".join(escape_sqlite(column) for column in columns)
     sql = """
 INSERT INTO _{table}_history (_rowid, {column_names}, _version, _updated, _mask)
-SELECT rowid, {column_names}, 1, strftime('%s', 'now'), {mask}
+SELECT rowid, {column_names}, 1, cast((julianday('now') - 2440587.5) * 86400.0 * 1000 as integer), {mask}
 FROM {table};
 """.format(
         table=table, column_names=column_names, mask=2 ** len(columns) - 1
@@ -150,49 +147,3 @@ def escape_sqlite(s):
         return s
     else:
         return f"[{s}]"
-
-
-# Original prototype:
-
-# -- Trigger for INSERT operation
-# CREATE TRIGGER content_insert_history
-# AFTER INSERT ON content
-# BEGIN
-#   INSERT INTO _content_history (id, title, body, created, _version, _updated, _mask)
-#   VALUES (new.id, new.title, new.body, new.created, 1, strftime('%s', 'now'), 15);
-# END;
-
-# -- Trigger for UPDATE operation
-# CREATE TRIGGER content_update_history
-# AFTER UPDATE ON content
-# FOR EACH ROW
-# BEGIN
-#   INSERT INTO _content_history (id, title, body, created, _version, _updated, _mask)
-#   SELECT new.id,
-#     CASE WHEN old.title != new.title THEN new.title ELSE NULL END,
-#     CASE WHEN old.body != new.body THEN new.body ELSE NULL END,
-#     CASE WHEN old.created != new.created THEN new.created ELSE NULL END,
-#     (SELECT MAX(_version) FROM _content_history WHERE id = old.id) + 1,
-#     strftime('%s', 'now'),
-#     (CASE WHEN old.title != new.title THEN 1 ELSE 0 END) +
-#     (CASE WHEN old.body != new.body THEN 2 ELSE 0 END) +
-#     (CASE WHEN old.created != new.created THEN 4 ELSE 0 END) +
-#     (CASE WHEN old.id != new.id THEN 8 ELSE 0 END)
-#   WHERE old.title != new.title OR old.body != new.body OR old.created != new.created;
-# END;
-
-# -- Trigger for DELETE operation
-# CREATE TRIGGER content_delete_history
-# AFTER DELETE ON content
-# BEGIN
-#   INSERT INTO _content_history (id, title, body, created, _version, _updated, _mask)
-#   VALUES (
-#     old.id,
-#     old.title,
-#     old.body,
-#     old.created,
-#     (SELECT COALESCE(MAX(_version), 0) FROM _content_history WHERE id = old.id) + 1,
-#     strftime('%s', 'now'),
-#     -1
-#   );
-# END;

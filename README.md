@@ -92,7 +92,9 @@ The `_rowid` column references the `rowid` of the row in the original table that
 
 The `id`, `name`, `age` and `weight` columns represent the new values assigned to the row when it was updated. These can also be `null`, which might represent no change or might represent the value being set to `null` (hence the `_mask` column).
 
-The `_version` column is a monotonically increasing integer that is incremented each time a row is updated. The `_updated` column is a timestamp showing when the change was recorded.
+The `_version` column is a monotonically increasing integer that is incremented each time a row is updated.
+
+The `_updated` column is a timestamp showing when the change was recorded. This is stored in milliseconds since the Unix epoch - to convert that to a human-readable UTC date you can use `strftime('%Y-%m-%d %H:%M:%S', _updated / 1000, 'unixepoch')` in your SQL queries.
 
 The `_mask` column is a bit mask that indicates which columns changed in an update. The bit mask is calculated by adding together the following values:
 
@@ -117,7 +119,7 @@ CREATE TRIGGER people_insert_history
 AFTER INSERT ON people
 BEGIN
     INSERT INTO _people_history (_rowid, id, name, age, weight, _version, _updated, _mask)
-    VALUES (new.rowid, new.id, new.name, new.age, new.weight, 1, strftime('%s', 'now'), 15);
+    VALUES (new.rowid, new.id, new.name, new.age, new.weight, 1, cast((julianday('now') - 2440587.5) * 86400.0 * 1000 as integer), 15);
 END;
 
 CREATE TRIGGER people_update_history
@@ -131,7 +133,7 @@ BEGIN
         CASE WHEN old.age != new.age then new.age else null end, 
         CASE WHEN old.weight != new.weight then new.weight else null end,
         (SELECT MAX(_version) FROM _people_history WHERE _rowid = old.rowid) + 1,
-        strftime('%s', 'now'),
+        cast((julianday('now') - 2440587.5) * 86400.0 * 1000 as integer),
         (CASE WHEN old.id != new.id then 1 else 0 end) + (CASE WHEN old.name != new.name then 2 else 0 end) + (CASE WHEN old.age != new.age then 4 else 0 end) + (CASE WHEN old.weight != new.weight then 8 else 0 end)
     WHERE old.id != new.id or old.name != new.name or old.age != new.age or old.weight != new.weight;
 END;
@@ -144,7 +146,7 @@ BEGIN
         old.rowid,
         old.id, old.name, old.age, old.weight,
         (SELECT COALESCE(MAX(_version), 0) from _people_history WHERE _rowid = old.rowid) + 1,
-        strftime('%s', 'now'),
+        cast((julianday('now') - 2440587.5) * 86400.0 * 1000 as integer),
         -1
     );
 END;
