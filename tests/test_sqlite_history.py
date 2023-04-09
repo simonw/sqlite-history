@@ -1,5 +1,6 @@
 import sqlite_utils
 from sqlite_history.sql import history_table_sql, triggers_sql
+from sqlite_history.cli import run
 from unittest.mock import ANY
 
 
@@ -105,3 +106,28 @@ def test_triggers_delete():
             "_mask": -1,
         },
     ]
+
+
+def test_cli(tmpdir):
+    test = tmpdir / "test.db"
+    db = sqlite_utils.Database(str(test))
+    db["test"].insert({"id": 1, "name": "Alice", "order": 1})
+    db["test"].enable_fts(("name",), create_triggers=True)
+    assert set(db.table_names()) == {
+        "test",
+        "test_fts",
+        "test_fts_docsize",
+        "test_fts_idx",
+        "test_fts_data",
+        "test_fts_config",
+    }
+    run([str(test), "--all"])
+    assert set(db.table_names()) == {
+        "test",
+        "test_fts",
+        "test_fts_docsize",
+        "test_fts_idx",
+        "test_fts_data",
+        "test_fts_config",
+        "_test_history",
+    }

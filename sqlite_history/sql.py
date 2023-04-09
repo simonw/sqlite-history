@@ -5,7 +5,6 @@ def history_table_sql(table, columns_and_types):
     """Return SQL for history table for a table and its columns."""
     if isinstance(columns_and_types, dict):
         columns_and_types = dict.items()
-    # column_names = ",\n".join("   " + column for column in columns_and_types)
     column_names = ",\n".join(
         "   {name} {type}".format(name=escape_sqlite(name), type=type)
         for name, type in columns_and_types
@@ -26,9 +25,9 @@ CREATE INDEX idx_{table}_history_rowid ON _{table}_history (_rowid);
 
 def triggers_sql(table, columns):
     """Return SQL for triggers for a table and its columns."""
-    column_names = ", ".join(columns)
-    new_column_values = ", ".join("new." + column for column in columns)
-    old_column_values = ", ".join("old." + column for column in columns)
+    column_names = ", ".join(escape_sqlite(column) for column in columns)
+    new_column_values = ", ".join("new." + escape_sqlite(column) for column in columns)
+    old_column_values = ", ".join("old." + escape_sqlite(column) for column in columns)
     # mask is a bit mask of all columns, so len(columns)
     mask = 2 ** len(columns) - 1
     insert_trigger = """
@@ -49,19 +48,20 @@ END;
         update_columns.append(
             """
         CASE WHEN old.{column} != new.{column} then new.{column} else null end""".format(
-                column=column
+                column=escape_sqlite(column)
             )
         )
     update_columns_sql = ", ".join(update_columns)
     mask_sql = " + ".join(
         """(CASE WHEN old.{column} != new.{column} then {base} else 0 end)""".format(
-            column=column,
+            column=escape_sqlite(column),
             base=2**idx,
         )
         for idx, column in enumerate(columns)
     )
     where_sql = " or ".join(
-        "old.{column} != new.{column}".format(column=column) for column in columns
+        "old.{column} != new.{column}".format(column=escape_sqlite(column))
+        for column in columns
     )
     update_trigger = """
 CREATE TRIGGER {table}_update_history
@@ -105,7 +105,7 @@ def backfill_sql(table, columns):
     # INSERT INTO _content_history (id, title, body, created, _version, _updated, _mask)
     # SELECT id, title, body, created, 1, strftime('%s', 'now'), 15
     # FROM content;
-    column_names = ", ".join(columns)
+    column_names = ", ".join(escape_sqlite(column) for column in columns)
     sql = """
 INSERT INTO _{table}_history (_rowid, {column_names}, _version, _updated, _mask)
 SELECT rowid, {column_names}, 1, strftime('%s', 'now'), {mask}
