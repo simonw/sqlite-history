@@ -19,7 +19,7 @@ Install this library using `pip`:
 
 This library can be used to configure triggers on a SQLite database such that any inserts, updates or deletes against a table will have their changes recorded in a separate table.
 
-You can enable history tracking for a table using the `enable_history()` function:
+You can enable history tracking for a table using the `configure_history()` function:
 
     import sqlite_history
     import sqlite3
