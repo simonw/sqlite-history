@@ -1,6 +1,7 @@
 # sqlite-history
 
 [![PyPI](https://img.shields.io/pypi/v/sqlite-history.svg)](https://pypi.org/project/sqlite-history/)
+[![Tests](https://github.com/simonw/sqlite-history/workflows/Test/badge.svg)](https://github.com/simonw/sqlite-history/actions?query=workflow%3ATest)
 [![Changelog](https://img.shields.io/github/v/release/simonw/sqlite-history?include_prereleases&label=changelog)](https://github.com/simonw/sqlite-history/releases)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/simonw/sqlite-history/blob/main/LICENSE)
 
