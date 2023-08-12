@@ -7,6 +7,8 @@
 
 Track changes to SQLite tables using triggers
 
+For more on this project: [sqlite-history: tracking changes to SQLite tables using triggers](https://simonwillison.net/2023/Apr/15/sqlite-history/)
+
 ## Installation
 
 Install this library using `pip`:
